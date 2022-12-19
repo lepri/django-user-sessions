@@ -23,6 +23,8 @@ class SessionMiddleware(MiddlewareMixin):
     def process_request(self, request):
         engine = import_module(settings.SESSION_ENGINE)
         session_key = request.COOKIES.get(settings.SESSION_COOKIE_NAME, None)
+        if 'HTTP_X_FORWARDED_FOR' in request.META:
+            request.META['REMOTE_ADDR'] = request.META['HTTP_X_FORWARDED_FOR'].split(",")[0].strip()
         request.session = engine.SessionStore(
             ip=request.META.get('REMOTE_ADDR', ''),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
@@ -53,7 +55,12 @@ class SessionMiddleware(MiddlewareMixin):
                 # Save the session data and refresh the client cookie.
                 # Skip session save for 500 responses, refs #3881.
                 if response.status_code != 500:
-                    request.session.save()
+                    try:
+                        namespace = request.resolver_match.namespace.split(':')[0]
+                    except AttributeError:
+                        namespace = None
+                    if namespace:
+                        request.session.save(namespace=namespace)
                     response.set_cookie(
                         settings.SESSION_COOKIE_NAME,
                         request.session.session_key,
