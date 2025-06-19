@@ -12,7 +12,7 @@ setup(
     download_url='https://pypi.org/project/django-user-sessions/',
     license='MIT',
     packages=find_packages(exclude=('example', 'tests',)),
-    install_requires=['Django>=3.2'],
+    install_requires=['Django<2.0'],
     include_package_data=True,
     python_requires='>=3.7',
     classifiers=[
